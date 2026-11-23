@@ -21,6 +21,11 @@
 #   malformed key or title exit 1  malformed issue key or title: expected '^[A-Z]+-[0-9]+: \S.*$'
 #   key mismatch           exit 1  issue key mismatch: title has '<T>', current issue is '<K>'
 # A usage error (no TITLE, unknown option, extra argument) exits 2.
+#
+# There is deliberately no --help/-h flag: TITLE is arbitrary text supplied by
+# the caller (a pull request title), so "-h" and "--help" are titles and are
+# validated like any other. Reading them as a help flag exits 0 on a keyless
+# title, the one outcome this gate must never produce (PERS-196).
 set -euo pipefail
 
 usage='usage: check-pr-title.sh [--key KEY] TITLE'
@@ -47,9 +52,11 @@ while (( $# > 0 )); do
       have_key=1
       shift
       ;;
+    # Not a flag: a title can be exactly these two strings, and answering with
+    # a usage line would pass a keyless title (PERS-196). Fall through to the
+    # TITLE argument so the key check decides.
     -h | --help)
-      printf '%s\n' "$usage"
-      exit 0
+      break
       ;;
     --)
       shift

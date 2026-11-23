@@ -149,6 +149,36 @@ assert_case "prefix comparison is exact, not a string prefix of the key" 1 \
   "issue key mismatch: title has 'PERS-12', current issue is 'PERS-123'" "" \
   --key PERS-123 "PERS-12: description"
 
+# --- a title that looks like a flag is a title (PERS-196) ------------------
+#
+# TITLE is caller-supplied text, so "--help" and "-h" are valid titles that
+# must fail closed for lacking a key, not be consumed as a help flag. The
+# first case is the `pr-title` job's shape: the title is the only argument.
+
+assert_case "a title of exactly --help fails closed (CI job shape)" 1 \
+  "missing issue key: title must start with '<KEY>: '" "" \
+  --help
+
+assert_case "a title of exactly -h fails closed" 1 \
+  "missing issue key: title must start with '<KEY>: '" "" \
+  -h
+
+assert_case "a --help title fails closed in exact-key mode" 1 \
+  "missing issue key: title must start with 'PERS-193: '" "" \
+  --key PERS-193 --help
+
+assert_case "a -h title fails closed in exact-key mode" 1 \
+  "missing issue key: title must start with 'PERS-193: '" "" \
+  --key PERS-193 -h
+
+assert_case "a --help title still hits the empty-key fail-closed branch" 1 \
+  "issue key unavailable; pass --key <PREFIX>-<n> explicitly" "" \
+  --key "" --help
+
+assert_case "the -- terminator keeps a --help title on the key path" 1 \
+  "missing issue key: title must start with '<KEY>: '" "" \
+  -- --help
+
 # --- fail closed on an unavailable key / usage errors ----------------------
 
 assert_case "an empty --key fails closed instead of checking grammar only" 1 \
