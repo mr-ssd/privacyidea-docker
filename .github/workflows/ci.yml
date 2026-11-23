@@ -83,6 +83,41 @@ jobs:
       - name: Test release input resolution
         run: bash tests/test-release-input.sh
 
+  pr-title-tests:
+    name: PR title validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      # Same reason as release-input: the failure messages are the guard rail,
+      # so they are tested like behaviour, in both grammar-only and --key mode.
+      - name: Test PR title validation
+        run: bash tests/test-pr-title.sh
+
+  pr-title:
+    name: Agent PR title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Human PRs are out of scope; agent branches are agent/<role>/<id>.
+    if: startsWith(github.event.pull_request.head.ref, 'agent/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      # Backstop only: an agent branch carries no issue key, so CI can verify
+      # the grammar but not that the key is the current issue's. The exact-key
+      # check runs in the creation step, before `gh pr create`.
+      - name: Check PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: bash .github/scripts/check-pr-title.sh "$TITLE"
+
   test:
     name: Test ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}

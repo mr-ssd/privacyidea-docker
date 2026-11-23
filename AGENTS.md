@@ -116,6 +116,7 @@ None currently. The former `PI_DB_PASSWORD` double-encoding note was a contract,
 - Do not add a HEALTHCHECK-motivated change alone: `curl` was installed into the image (Dockerfile:41) for a healthcheck that does not exist; if you introduce one, wire it in the same change and update structure-tests.yaml.
 - There is no unit-test framework. Regression gates are container-structure-test (`make test`, structure-tests.yaml), the integration test via docker-compose-test.yml + run-tests.sh, and `bash tests/test-db-uri-encoding.sh` (needs a built image, `IMAGE` env selects it); run or extend those for any behaviour change.
 - Keep the image non-root (`USER nobody`, Dockerfile:44) and keep the `exec`-based handoff to gunicorn (privacyidea_entrypoint.sh:40,47) so SIGTERM shuts down gunicorn, not a shell wrapper.
+- Agent PR titles must be `<ISSUE-KEY>: <title>`, where `<ISSUE-KEY>` is the current task's Multica issue identifier (uppercase `[A-Z]+-[0-9]+`); run `.github/scripts/check-pr-title.sh --key "$ISSUE_KEY" "$TITLE"` before `gh pr create`.
 
 ## Pointers
 
