@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-330-pi-auto-update-doc",
+  "issue_id": "PERS-330",
+  "case_type": "bug",
+  "reviewed_baseline_sha": "7d859e08499cede49002f17830a9e89f113af760",
+  "owner": "Documenter",
+  "independent_reviewer": "Code Reviewer",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": [
+    "BUG-1",
+    "BUG-2",
+    "BUG-3",
+    "BUG-4"
+  ],
+  "approved_check_ids": [
+    "BUG-1",
+    "BUG-2",
+    "BUG-3",
+    "BUG-4"
+  ],
+  "allowed_paths": [
+    "README.md",
+    ".specify/bugs/pers-330-pi-auto-update-doc/",
+    ".specify/traceability/cases/pers-330-pi-auto-update-doc.yml"
+  ],
+  "evidence_paths": [
+    ".specify/bugs/pers-330-pi-auto-update-doc/"
+  ],
+  "required_reports": [
+    "assessment",
+    "fix",
+    "test"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8"
+}

@@ -111,7 +111,7 @@ The kheeklab privacyIDEA container can create a default admin user by setting th
 
 > [!WARNING]
 > Bootstrap runs only once, on first start, and records initialization in `PI_DATA_DIR`. Setting `PI_SKIP_BOOTSTRAP` to **true** forces bootstrap to be skipped; it does not overwrite admin credentials or keys. For non-SQLite databases, startup refuses to generate new keys if privacyIDEA data exists but key files are missing.
-> `PI_AUTO_UPDATE` set to **true** will update privacyIDEA to the latest version. Make sure you have backup your data before setting `PI_AUTO_UPDATE` to **true**.
+> PI_AUTO_UPDATE set to **true** will run the privacyIDEA schema upgrade. Make sure you have backup your data before setting `PI_AUTO_UPDATE` to **true**.
 
 ### gunicorn environment variables
 
