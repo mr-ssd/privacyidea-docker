@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   actions: read
 
 env:
@@ -38,6 +38,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           ROOT=$(mktemp -d "$RUNNER_TEMP/spec-kit-evidence.XXXXXX")
@@ -196,9 +197,45 @@ jobs:
           fi
           set -e
           printf '{"mode":"%s","head":"%s","base":"%s","tested":"%s","check_run_url":"%s","exit_code":%s,"shipping_runbook_version":"%s","checked_runbook_version":"%s"}\n' "$MODE" "$PR_HEAD_SHA" "$PR_BASE_SHA" "$ACTUAL_TESTED_SHA" "$CHECK_RUN_URL" "$CHECK_RC" "$RUNBOOK_VERSION" "$RECEIPT_RUNBOOK_VERSION" > "$ROOT/evidence/check-result.json"
-          find "$ROOT/evidence" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$ROOT/evidence/SHA256SUMS"
+          # Review record wiring: snapshot the PR review state into the bundle so the
+          # review-ready gate (see evidence-contract.md) is checkable from the artifact.
+          if [ "$MODE" = case ]; then
+            gh api "repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }}/reviews" \
+              --jq '[.[] | {user: .user.login, state: .state, submitted_at: .submitted_at}]' \
+              > "$ROOT/evidence/reviews.json" 2>/dev/null || printf '[]\n' > "$ROOT/evidence/reviews.json"
+          fi
+          # Paths in SHA256SUMS are relative to the evidence dir so a downloaded
+          # bundle verifies with plain `sha256sum --check SHA256SUMS` from its root.
+          (cd "$ROOT/evidence" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
           echo "EVIDENCE_DIR=$ROOT/evidence" >> "$GITHUB_ENV"
           echo "CHECK_RC=$CHECK_RC" >> "$GITHUB_ENV"
+          echo "CHECK_RUN_URL=$CHECK_RUN_URL" >> "$GITHUB_ENV"
+
+      - name: Bundle self-check (fail closed on a missing SHA256SUMS entry)
+        if: always()
+        shell: bash
+        env:
+          EVIDENCE_DIR: ${{ env.EVIDENCE_DIR }}
+        run: |
+          set -euo pipefail
+          test -n "$EVIDENCE_DIR"
+          cd "$EVIDENCE_DIR"
+          test -s SHA256SUMS
+          missing=0
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            path=$(printf '%s\n' "$line" | cut -c 67-)
+            if [ ! -f "$path" ]; then
+              echo "FAIL: SHA256SUMS entry absent from staged bundle: $path" >&2
+              missing=$((missing + 1))
+            fi
+          done < SHA256SUMS
+          if [ "$missing" -ne 0 ]; then
+            echo "FAIL: $missing SHA256SUMS entries missing from staged bundle; the job fails closed" >&2
+            exit 1
+          fi
+          sha256sum --check --quiet SHA256SUMS
+          echo "bundle self-check PASS: all $(wc -l < SHA256SUMS) SHA256SUMS entries present and digest-verified"
 
       - name: Upload trace evidence
         id: evidence
@@ -207,6 +244,7 @@ jobs:
         with:
           name: spec-kit-${{ env.CASE_KEY }}-${{ github.event.pull_request.head.sha }}
           path: ${{ env.EVIDENCE_DIR }}
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
 
@@ -225,3 +263,18 @@ jobs:
           test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_DIGEST" && test -n "$ARTIFACT_URL"
           printf 'artifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
           test "$CHECK_RC" = 0
+
+      - name: Record check-run URL on the PR (case runs)
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CASE_KEY: ${{ env.CASE_KEY }}
+          CHECK_RUN_URL: ${{ env.CHECK_RUN_URL }}
+          CHECK_RC: ${{ env.CHECK_RC }}
+        run: |
+          set -euo pipefail
+          case "$CASE_KEY" in pers-*) ;; *) exit 0 ;; esac
+          test -n "$CHECK_RUN_URL"
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY" \
+            --body "spec-kit trace case-run record — case \`$CASE_KEY\`, check-run: $CHECK_RUN_URL (gate exit_code=$CHECK_RC). The same URL is recorded in the artifact's check-result.json and must be posted to the Multica case issue by the case-run step (see evidence-contract.md)."
