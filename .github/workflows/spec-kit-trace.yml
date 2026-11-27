@@ -18,6 +18,7 @@ env:
   PILOT_BASELINE_SHA: ${{ vars.PILOT_BASELINE_SHA }}
   RUNBOOK_ARCHIVE: ${{ vars.RUNBOOK_ARCHIVE }}
   RUNBOOK_SHA256: ${{ vars.RUNBOOK_SHA256 }}
+  RUNBOOK_VERSION: '1.0.4'
 
 jobs:
   trace:
@@ -86,6 +87,13 @@ jobs:
           TRUSTED_MANIFEST="$ROOT/trusted/managed-files.json"
           TRUSTED_CASE_CHECKER="$ROOT/trusted/check-case.py"
           git checkout --detach "$PR_HEAD_SHA" || CHECK_RC=$?
+          # The checker's --runbook value must equal the runbook_version recorded in the
+          # branch's own bootstrap receipt (pinned heads carry 1.0.0; repos onboarded with
+          # a newer runbook carry that version). RUNBOOK_VERSION below only labels the
+          # runbook that shipped this workflow (written to check-result.json as
+          # shipping_runbook_version); passing it to verify would fail closed on every
+          # branch onboarded with a different runbook version (PERS-338 blocker).
+          RECEIPT_RUNBOOK_VERSION=$(python3 -c "import json;print(json.load(open('.specify/bootstrap-receipt.json',encoding='utf-8'))['runbook_version'])" 2> "$ROOT/evidence/receipt.err") || CHECK_RC=1
           if [ "$MODE" = case ]; then
             printf '%s\n' "$CASE_KEY" | grep -Eq '^pers-[0-9]+-[a-z0-9-]+$' || CHECK_RC=1
             test -s "$CASE_MANIFEST" || CHECK_RC=1
@@ -144,7 +152,7 @@ jobs:
             REVIEWED_BASE_SHA=$(git rev-list --reverse "$PR_BASE_SHA..$PR_HEAD_SHA" | sed -n '1p')
             test -n "$REVIEWED_BASE_SHA" || CHECK_RC=1
             git worktree add --detach "$ROOT/reviewed-base" "$REVIEWED_BASE_SHA" > "$ROOT/evidence/worktree.log" 2>&1 || CHECK_RC=$?
-            python3 "$TRUSTED_CHECKER" preflight --repo "$ROOT/reviewed-base" --base "$REVIEWED_BASE_SHA" --commit "$REVIEWED_BASE_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/preflight.log" 2>&1 || CHECK_RC=$?
+            python3 "$TRUSTED_CHECKER" preflight --repo "$ROOT/reviewed-base" --base "$REVIEWED_BASE_SHA" --commit "$REVIEWED_BASE_SHA" --expected "$TRUSTED_MANIFEST" --runbook "$RECEIPT_RUNBOOK_VERSION" > "$ROOT/evidence/preflight.log" 2>&1 || CHECK_RC=$?
           python3 - "$PWD" "$PR_BASE_SHA" "$PR_HEAD_SHA" "$TRUSTED_MANIFEST" <<'PY' > "$ROOT/evidence/baseline-scopes.json" || CHECK_RC=1
           import json, subprocess, sys
           repo, base, head, manifest_path = sys.argv[1:]
@@ -174,9 +182,9 @@ jobs:
             assert data.strip(), f'required file empty: {required}'
           print(json.dumps({'commits':outcomes,'required_files':'PASS'}))
           PY
-            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
+            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook "$RECEIPT_RUNBOOK_VERSION" > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
           elif [ "$MODE" = case ] && [ "$CHECK_RC" -eq 0 ]; then
-            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
+            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook "$RECEIPT_RUNBOOK_VERSION" > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
             if [ "$CHECK_RC" -eq 0 ]; then
               : > "$ROOT/evidence/checks.jsonl"
               while IFS= read -r id; do
@@ -187,7 +195,7 @@ jobs:
             fi
           fi
           set -e
-          printf '{"mode":"%s","head":"%s","base":"%s","tested":"%s","check_run_url":"%s","exit_code":%s}\n' "$MODE" "$PR_HEAD_SHA" "$PR_BASE_SHA" "$ACTUAL_TESTED_SHA" "$CHECK_RUN_URL" "$CHECK_RC" > "$ROOT/evidence/check-result.json"
+          printf '{"mode":"%s","head":"%s","base":"%s","tested":"%s","check_run_url":"%s","exit_code":%s,"shipping_runbook_version":"%s","checked_runbook_version":"%s"}\n' "$MODE" "$PR_HEAD_SHA" "$PR_BASE_SHA" "$ACTUAL_TESTED_SHA" "$CHECK_RUN_URL" "$CHECK_RC" "$RUNBOOK_VERSION" "$RECEIPT_RUNBOOK_VERSION" > "$ROOT/evidence/check-result.json"
           find "$ROOT/evidence" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$ROOT/evidence/SHA256SUMS"
           echo "EVIDENCE_DIR=$ROOT/evidence" >> "$GITHUB_ENV"
           echo "CHECK_RC=$CHECK_RC" >> "$GITHUB_ENV"
