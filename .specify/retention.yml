@@ -1,0 +1,15 @@
+schema_version: 1
+repository: mr-ssd/privacyidea-docker
+runbook_version: "1.0.0"
+ci_artifact_retention_days: 90
+durable_evidence:
+  - issue and pull request records (including closed PRs)
+  - commits at pinned heads
+  - versioned case manifests (.specify/traceability/cases/*.yml)
+  - bootstrap receipt (.specify/bootstrap-receipt.json)
+  - CI check-run URLs, statuses and evidence artifact inventory with SHA-256 digests
+  - exceptions, decisions and review records
+excluded_from_evidence:
+  - secrets and credentials
+  - .specify/feature.json per-checkout run state
+  - temporary output
