@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-375-silent-key-regeneration",
+  "issue_id": "PERS-375",
+  "case_type": "idea",
+  "reviewed_baseline_sha": "e64d1ed853de18e6797b8422aacebb3fec9f017e",
+  "owner": "Reliability & Performance Engineer",
+  "independent_reviewer": "Solution Architect",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "approved_check_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "allowed_paths": [
+    ".specify/assessments/pers-375-silent-key-regeneration/intake.md",
+    ".specify/assessments/pers-375-silent-key-regeneration/research.md",
+    ".specify/assessments/pers-375-silent-key-regeneration/problem.md",
+    ".specify/assessments/pers-375-silent-key-regeneration/concept.md",
+    ".specify/assessments/pers-375-silent-key-regeneration/decision.md",
+    ".specify/traceability/cases/pers-375-silent-key-regeneration.yml"
+  ],
+  "evidence_paths": [
+    ".specify/assessments/pers-375-silent-key-regeneration/"
+  ],
+  "required_reports": [
+    "intake",
+    "research",
+    "problem",
+    "concept",
+    "decision"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8"
+}
