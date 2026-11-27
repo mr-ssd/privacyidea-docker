@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-329-test-release-input",
+  "issue_id": "PERS-329",
+  "case_type": "feature",
+  "feature_directory": "specs/pers-329-test-release-input",
+  "reviewed_baseline_sha": "7d859e08499cede49002f17830a9e89f113af760",
+  "owner": "Lead Engineer",
+  "independent_reviewer": "Code Reviewer",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": [
+    "FEAT-1",
+    "FEAT-2",
+    "FEAT-3"
+  ],
+  "approved_check_ids": [
+    "FEAT-1",
+    "FEAT-2",
+    "FEAT-3"
+  ],
+  "allowed_paths": [
+    "Makefile",
+    "specs/pers-329-test-release-input/",
+    ".specify/features/pers-329-test-release-input/",
+    ".specify/traceability/cases/pers-329-test-release-input.yml"
+  ],
+  "evidence_paths": [
+    "specs/pers-329-test-release-input/",
+    ".specify/features/pers-329-test-release-input/"
+  ],
+  "required_reports": [
+    "spec",
+    "plan",
+    "tasks"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8"
+}
