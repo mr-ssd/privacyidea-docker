@@ -1,0 +1,297 @@
+{
+  "event_options": {
+    "codex": "--events false",
+    "omp": "omitted",
+    "opencode": "--events false"
+  },
+  "generated_files": {
+    ".agents/skills/speckit-analyze/SKILL.md": {
+      "mode": "100644",
+      "sha256": "ade768d6bc81a99111dfe3a660721f1e1898e98a12b3d2e42302043c99a27e3f"
+    },
+    ".agents/skills/speckit-assess-decide/SKILL.md": {
+      "mode": "100644",
+      "sha256": "780d91f288b6f32a157e3b51be086178644b35ee946750bacdd364e9c4694240"
+    },
+    ".agents/skills/speckit-assess-define/SKILL.md": {
+      "mode": "100644",
+      "sha256": "f5f2b05ee879ce8edeeaddf46e3c827d9a9787271fd68f06d8eeed79dd6ae88a"
+    },
+    ".agents/skills/speckit-assess-intake/SKILL.md": {
+      "mode": "100644",
+      "sha256": "ee9aa87288caaef6125186d6f343b851134ba4aa5aa9e469e3a8563e6db13a1f"
+    },
+    ".agents/skills/speckit-assess-research/SKILL.md": {
+      "mode": "100644",
+      "sha256": "19a5328c1dd7a75feefc1c99510501ed57b554ac79223db6238b0253b5b0992f"
+    },
+    ".agents/skills/speckit-assess-shape/SKILL.md": {
+      "mode": "100644",
+      "sha256": "7f6b6f30caf1d1125e958e9a8081dc971407f425bf0eaf1f8632b0c7e2c249e1"
+    },
+    ".agents/skills/speckit-bug-assess/SKILL.md": {
+      "mode": "100644",
+      "sha256": "313d5657be62ca6e0d4fdd4837082f0f68fb62eb0df15470e2e022b5d556063b"
+    },
+    ".agents/skills/speckit-bug-fix/SKILL.md": {
+      "mode": "100644",
+      "sha256": "9008b1238fefcd92bbab58ad367b8eb23e29f5e3f6e78c7095492a7e0f0ae4aa"
+    },
+    ".agents/skills/speckit-bug-test/SKILL.md": {
+      "mode": "100644",
+      "sha256": "617391a06d5285224d7e021c23242267fa8ebe38b2eaee58cb0d15fbb4b5f429"
+    },
+    ".agents/skills/speckit-checklist/SKILL.md": {
+      "mode": "100644",
+      "sha256": "44562f4ba2c4355bda5811a6d59726386ebc3e63662e1a9eecb5647548ef20cc"
+    },
+    ".agents/skills/speckit-clarify/SKILL.md": {
+      "mode": "100644",
+      "sha256": "6b1005e1b07868f4244bc514dbca4a769eba70b45a4a221d337d3f82488ccffb"
+    },
+    ".agents/skills/speckit-constitution/SKILL.md": {
+      "mode": "100644",
+      "sha256": "7273986bf3d2a3b8d4b4b7b40018a87519c09e68ef2a428c58297896e83f4a84"
+    },
+    ".agents/skills/speckit-converge/SKILL.md": {
+      "mode": "100644",
+      "sha256": "9ae6b5c2d9379eb11a6a6cd86290be8f3b95b73030d553b4a0d3515940045ec6"
+    },
+    ".agents/skills/speckit-implement/SKILL.md": {
+      "mode": "100644",
+      "sha256": "c72a70a5e6af585d967e3e334a01a240b2ae41cb62456ef4ff8f47392c9e9818"
+    },
+    ".agents/skills/speckit-plan/SKILL.md": {
+      "mode": "100644",
+      "sha256": "19b7b38956d51d0ee665d042c0ea8d09e815997f75ce946b609e506aa9ba39ff"
+    },
+    ".agents/skills/speckit-specify/SKILL.md": {
+      "mode": "100644",
+      "sha256": "3aa4a70edb2edec70a9361bf17818651052f2f312cbda10f5cff349f52b28870"
+    },
+    ".agents/skills/speckit-tasks/SKILL.md": {
+      "mode": "100644",
+      "sha256": "ef142b42d053d97eb1f845d8dd3d72efefe4eaa124e6472a1967fd97abc62635"
+    },
+    ".omp/commands/speckit.analyze.md": {
+      "mode": "100644",
+      "sha256": "345de2a9ab158aa30dcdaa011e7b4e1928724db8b0ecc4f4f986b81462608b29"
+    },
+    ".omp/commands/speckit.checklist.md": {
+      "mode": "100644",
+      "sha256": "fa58b19e2604ce56ff5f5427061f6ee94fd44d7194e740b874824d9bf21ee15b"
+    },
+    ".omp/commands/speckit.clarify.md": {
+      "mode": "100644",
+      "sha256": "dd11eb5b9759f7d3cd18c9d7f23a0ae2fe7973fc6ca2486dbfaf53a5569224b1"
+    },
+    ".omp/commands/speckit.constitution.md": {
+      "mode": "100644",
+      "sha256": "9a7e9296f0878cdf4ed011b0de74cfb3656938680b64e43e808553fdfd054efc"
+    },
+    ".omp/commands/speckit.converge.md": {
+      "mode": "100644",
+      "sha256": "3cb55244c9dc5b9bf52ee3127ba177c52cabd5e5e5197e1312497b3eaeb8b9a4"
+    },
+    ".omp/commands/speckit.implement.md": {
+      "mode": "100644",
+      "sha256": "e036ce63702db93e656e1c91ee6c02a8dc3d4a4f8624f8ba4adc69027fe68983"
+    },
+    ".omp/commands/speckit.plan.md": {
+      "mode": "100644",
+      "sha256": "3be8b011db9c6bb1cc77037f7d90756a6dbcbda1995cda2192818385732b27ff"
+    },
+    ".omp/commands/speckit.specify.md": {
+      "mode": "100644",
+      "sha256": "f187308807970a6da6df55c4ac6a5be992c14059e607eda950ffde1bd17531dd"
+    },
+    ".omp/commands/speckit.tasks.md": {
+      "mode": "100644",
+      "sha256": "1bdd6bf7cdc130661cd63745411512744905a13a0f19c71ba7fcde020cf0bc33"
+    },
+    ".opencode/commands/speckit.analyze.md": {
+      "mode": "100644",
+      "sha256": "345de2a9ab158aa30dcdaa011e7b4e1928724db8b0ecc4f4f986b81462608b29"
+    },
+    ".opencode/commands/speckit.checklist.md": {
+      "mode": "100644",
+      "sha256": "fa58b19e2604ce56ff5f5427061f6ee94fd44d7194e740b874824d9bf21ee15b"
+    },
+    ".opencode/commands/speckit.clarify.md": {
+      "mode": "100644",
+      "sha256": "dd11eb5b9759f7d3cd18c9d7f23a0ae2fe7973fc6ca2486dbfaf53a5569224b1"
+    },
+    ".opencode/commands/speckit.constitution.md": {
+      "mode": "100644",
+      "sha256": "9a7e9296f0878cdf4ed011b0de74cfb3656938680b64e43e808553fdfd054efc"
+    },
+    ".opencode/commands/speckit.converge.md": {
+      "mode": "100644",
+      "sha256": "3cb55244c9dc5b9bf52ee3127ba177c52cabd5e5e5197e1312497b3eaeb8b9a4"
+    },
+    ".opencode/commands/speckit.implement.md": {
+      "mode": "100644",
+      "sha256": "e036ce63702db93e656e1c91ee6c02a8dc3d4a4f8624f8ba4adc69027fe68983"
+    },
+    ".opencode/commands/speckit.plan.md": {
+      "mode": "100644",
+      "sha256": "3be8b011db9c6bb1cc77037f7d90756a6dbcbda1995cda2192818385732b27ff"
+    },
+    ".opencode/commands/speckit.specify.md": {
+      "mode": "100644",
+      "sha256": "f187308807970a6da6df55c4ac6a5be992c14059e607eda950ffde1bd17531dd"
+    },
+    ".opencode/commands/speckit.tasks.md": {
+      "mode": "100644",
+      "sha256": "1bdd6bf7cdc130661cd63745411512744905a13a0f19c71ba7fcde020cf0bc33"
+    },
+    ".specify/.gitignore": {
+      "mode": "100644",
+      "sha256": "0a61c5378b0bb2e0f85babff99c8b166f2170a2c12378cd17d929aa19296ec88"
+    },
+    ".specify/extensions.yml": {
+      "mode": "100644",
+      "sha256": "5642123f0ed7cf531de22ea1320a7c0712fc9b448984c27bb27f67c04d2d46a5"
+    },
+    ".specify/extensions/.registry": {
+      "mode": "100644",
+      "sha256": "073de5553e39a05c43c8e31b49d61d8ac006b499743ae8afd497606057702701"
+    },
+    ".specify/extensions/assess/README.md": {
+      "mode": "100644",
+      "sha256": "edc00dd1c59817c45c23916a463a8833d65cff26c629dd876b7cfe516d522938"
+    },
+    ".specify/extensions/assess/commands/speckit.assess.decide.md": {
+      "mode": "100644",
+      "sha256": "3e427c50c90646bcd9ca590f889633ba7d16cb4880ffe9c6ca1df59c461638d4"
+    },
+    ".specify/extensions/assess/commands/speckit.assess.define.md": {
+      "mode": "100644",
+      "sha256": "cd75d8a4839efb189f1209bbb0d33a52ff0977742d1de8d6f8daf3e8bb4b043b"
+    },
+    ".specify/extensions/assess/commands/speckit.assess.intake.md": {
+      "mode": "100644",
+      "sha256": "e3d76bef113c041f28232f6d3ba37403d409e4a04671d0838fae74c6dedfe759"
+    },
+    ".specify/extensions/assess/commands/speckit.assess.research.md": {
+      "mode": "100644",
+      "sha256": "200dd254abfdb7cc93bed47a6fac9ca9ae0f01bb3f247fe3d73c3fd581245bdd"
+    },
+    ".specify/extensions/assess/commands/speckit.assess.shape.md": {
+      "mode": "100644",
+      "sha256": "6c2fd8c1687ac5b1e02891bcaf5c83f5ac408bd391b6dd7cfe09ad82272179ab"
+    },
+    ".specify/extensions/assess/extension.yml": {
+      "mode": "100644",
+      "sha256": "c446e95c0cfc9482eb794fa90d428c5da3257162515db2cebd9ae3ec534d1919"
+    },
+    ".specify/extensions/bug/README.md": {
+      "mode": "100644",
+      "sha256": "b055be53187f423d29fe777a460ff6566579c5688a01ee581cb80bb7464b908c"
+    },
+    ".specify/extensions/bug/commands/speckit.bug.assess.md": {
+      "mode": "100644",
+      "sha256": "1cc7c1a8536dcd5a561384c2923b2820bc74b165210f208ad29d0b75c3ba8727"
+    },
+    ".specify/extensions/bug/commands/speckit.bug.fix.md": {
+      "mode": "100644",
+      "sha256": "a4ff90ed1df640eaf3815dab40f26086450b6107cbf9b3ef360c39e7853450f2"
+    },
+    ".specify/extensions/bug/commands/speckit.bug.test.md": {
+      "mode": "100644",
+      "sha256": "d3570905746ed774e9975e921ed01b6e6f0aeb427b8e8da593d64ff88ee8bfe8"
+    },
+    ".specify/extensions/bug/extension.yml": {
+      "mode": "100644",
+      "sha256": "00ec851a8e57713e9d65401e4c7fa5b4fa4a689decacb0b654ba5411c653b647"
+    },
+    ".specify/init-options.json": {
+      "mode": "100644",
+      "sha256": "43b00a07a56028fd84d6933e8ffe4d233cce88f698c44e6eee1486f5f419a97d"
+    },
+    ".specify/integration.json": {
+      "mode": "100644",
+      "sha256": "be9b40c1301c47b178db32005f58d93b1b7b3066b6a3e210de18e95c0e83ba0b"
+    },
+    ".specify/integrations/codex.manifest.json": {
+      "mode": "100644",
+      "sha256": "2ce16b6d5e1193a7e50f8239a4115c4b20a3d4ea2ee924013b25048546a6aa00"
+    },
+    ".specify/integrations/omp.manifest.json": {
+      "mode": "100644",
+      "sha256": "f4e9732ff95c1de87d2abe746a56cb56b76af6532c243f2f0f68689d32ba0e97"
+    },
+    ".specify/integrations/opencode.manifest.json": {
+      "mode": "100644",
+      "sha256": "44d5888d53ad6ecd5cf0fcd44a026cb5a3cc782bfe2827896862fabd52f1cd03"
+    },
+    ".specify/integrations/speckit.manifest.json": {
+      "mode": "100644",
+      "sha256": "d238de53d789832e9682e685bab5315d474b61686aea96defd16599e9a629063"
+    },
+    ".specify/scripts/bash/check-prerequisites.sh": {
+      "mode": "100755",
+      "sha256": "47cddf0ee476a1a5201927260666364490b7c602a52fdd8466160802925f995b"
+    },
+    ".specify/scripts/bash/common.sh": {
+      "mode": "100755",
+      "sha256": "063ecfacccb38b2bc0155019dd927dbd65a3a2ca73479c60e94bf196329eb63f"
+    },
+    ".specify/scripts/bash/create-new-feature.sh": {
+      "mode": "100755",
+      "sha256": "1e422acb000ab106b63ba1f9f9258bbcdc5b5c93f4e9f88588c0e671ad61b872"
+    },
+    ".specify/scripts/bash/markdown_sections.py": {
+      "mode": "100644",
+      "sha256": "189e980b7c86f54c0886be57e3113cf47fc474467a08dff851144b5cc5e1fe39"
+    },
+    ".specify/scripts/bash/resolve-template.sh": {
+      "mode": "100755",
+      "sha256": "829e227096abc8bf0889889ec9f792f503ca5d395b7836a8a7eb739ee75214e7"
+    },
+    ".specify/scripts/bash/setup-plan.sh": {
+      "mode": "100755",
+      "sha256": "d378ec66ba20d2da01c71dad8935062c1c27f0bba890be9a6d3dda52ea056a4e"
+    },
+    ".specify/scripts/bash/setup-tasks.sh": {
+      "mode": "100755",
+      "sha256": "0350b2def158c4dc333cd888fc5a3b10785b3d5c2cf936f93e910242ea9d507d"
+    },
+    ".specify/templates/checklist-template.md": {
+      "mode": "100644",
+      "sha256": "70bbc48e884fab372ffb09e83e78ff983e28b69caebf8cd9964a02b6836683ac"
+    },
+    ".specify/templates/constitution-template.md": {
+      "mode": "100644",
+      "sha256": "ce7549540fa45543cca797a150201d868e64495fdff39dc38246fb17bd4024b3"
+    },
+    ".specify/templates/plan-template.md": {
+      "mode": "100644",
+      "sha256": "a828ad6206526574ab3fc99be6d0154588cb1c9774c5919d71b81ab5b2dbffa0"
+    },
+    ".specify/templates/spec-template.md": {
+      "mode": "100644",
+      "sha256": "3945437fc35cd30a5b2bf7beea680337c3516826d3efa5a6b92c4a7eca1ba28e"
+    },
+    ".specify/templates/tasks-template.md": {
+      "mode": "100644",
+      "sha256": "b0f527d41e546af0c31903e04f9b20965b6b497b573792198f663a64ce128863"
+    },
+    ".specify/workflows/speckit/workflow.yml": {
+      "mode": "100644",
+      "sha256": "dc0409237d62f267b2d496022cbafadb1fcebe2c1335127fead51dbcd5acbd84"
+    },
+    ".specify/workflows/workflow-registry.json": {
+      "mode": "100644",
+      "sha256": "52c48982410107d52ae41257b4a05f4aedb7c9d3e382f662e98508d47bebccf9"
+    }
+  },
+  "integrations": [
+    "codex",
+    "opencode",
+    "omp"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8",
+  "upstream_url": "https://github.com/github/spec-kit"
+}

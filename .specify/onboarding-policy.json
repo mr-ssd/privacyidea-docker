@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "repository": "mr-ssd/privacyidea-docker",
+  "owner": "mr-ssd",
+  "runbook_version": "1.0.0",
+  "upstream_url": "https://github.com/github/spec-kit",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8",
+  "integrations": ["codex", "opencode", "omp"],
+  "extensions": ["bug", "assess"],
+  "checks": [
+    "hadolint",
+    "shellcheck",
+    "actionlint",
+    "test-release-input",
+    "docker-build-amd64-arm64",
+    "container-structure-test",
+    "compose-integration",
+    "spec-kit-trace"
+  ],
+  "independent_review": "required",
+  "human_merge_approval": "required",
+  "pilot": {
+    "issue": "PERS-327",
+    "authorization": "Approve isolated pilot execution after PERS-317 PASS; zero workspace agent changes",
+    "approved_at": "2026-11-27T07:37:59Z",
+    "baseline_branch": "pilot/spec-kit-baseline",
+    "base_sha": "f3c01c28cefd6f3df6ea2fe95c4653088ee4024e",
+    "workspace_agent_changes": "zero"
+  }
+}

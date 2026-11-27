@@ -1,0 +1,219 @@
+name: spec-kit-trace
+
+on:
+  pull_request:
+    branches:
+      - main
+      - pilot/spec-kit-baseline
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+env:
+  CONFIGURED_BASE_BRANCH: main
+  CONFIGURED_BASE_SHA: f3c01c28cefd6f3df6ea2fe95c4653088ee4024e
+  PILOT_BASELINE_BRANCH: pilot/spec-kit-baseline
+  PILOT_BASELINE_SHA: ${{ vars.PILOT_BASELINE_SHA }}
+  RUNBOOK_ARCHIVE: ${{ vars.RUNBOOK_ARCHIVE }}
+  RUNBOOK_SHA256: ${{ vars.RUNBOOK_SHA256 }}
+
+jobs:
+  trace:
+    name: spec-kit trace gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Trace gate
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -uo pipefail
+          ROOT=$(mktemp -d "$RUNNER_TEMP/spec-kit-evidence.XXXXXX")
+          mkdir -p "$ROOT/evidence" "$ROOT/trusted"
+          CHECK_RC=0
+          case "$PR_BASE_REF" in
+            "$CONFIGURED_BASE_BRANCH") MODE=baseline; CASE_KEY=baseline; APPROVED_BASE_SHA="$CONFIGURED_BASE_SHA" ;;
+            "$PILOT_BASELINE_BRANCH") MODE=case; APPROVED_BASE_SHA="$PILOT_BASELINE_SHA" ;;
+            *) echo "unapproved PR base: $PR_BASE_REF" >&2; MODE=invalid; CASE_KEY=invalid; APPROVED_BASE_SHA=; CHECK_RC=1 ;;
+          esac
+          if [ "$MODE" = case ]; then CASE_KEY=${PR_HEAD_REF##*/}; fi
+          echo "CASE_KEY=$CASE_KEY" >> "$GITHUB_ENV"
+          CASE_MANIFEST=".specify/traceability/cases/$CASE_KEY.yml"
+          APPROVED_CHECK_IDS_FILE="$ROOT/approved-check-ids.txt"
+          # Trusted inputs come from the SHA-verified staged runbook archive (baseline
+          # mode) or the protected approved baseline revision (case mode), never the PR head.
+          if [ "$MODE" = baseline ]; then
+            if [ -z "$RUNBOOK_ARCHIVE" ] || [ -z "$RUNBOOK_SHA256" ]; then
+              echo 'FAIL: RUNBOOK_ARCHIVE/RUNBOOK_SHA256 not staged for baseline mode' >&2
+              CHECK_RC=1
+            else
+              curl -fsSL "$RUNBOOK_ARCHIVE" | base64 -d > "$ROOT/runbook.tar.gz" || CHECK_RC=$?
+              if [ "$CHECK_RC" -eq 0 ]; then
+                printf '%s  %s\n' "$RUNBOOK_SHA256" "$ROOT/runbook.tar.gz" | sha256sum --check - || CHECK_RC=1
+                tar -xzf "$ROOT/runbook.tar.gz" -C "$ROOT/trusted" || CHECK_RC=1
+                (cd "$ROOT/trusted" && sha256sum --check SHA256SUMS) || CHECK_RC=1
+              fi
+            fi
+          elif [ "$MODE" = case ]; then
+            git fetch --no-tags origin "$PILOT_BASELINE_BRANCH" || CHECK_RC=$?
+            if [ -z "$APPROVED_BASE_SHA" ]; then
+              echo 'FAIL: PILOT_BASELINE_SHA repository variable not configured' >&2
+              CHECK_RC=1
+            fi
+            if [ "$CHECK_RC" -eq 0 ] && [ "$(git rev-parse "origin/$PILOT_BASELINE_BRANCH")" != "$APPROVED_BASE_SHA" ]; then
+              echo 'FAIL: pilot baseline branch head differs from configured PILOT_BASELINE_SHA' >&2
+              CHECK_RC=1
+            fi
+            if [ "$CHECK_RC" -eq 0 ]; then
+              git show "origin/$PILOT_BASELINE_BRANCH:.specify/onboarding/check.py" > "$ROOT/trusted/check.py"
+              git show "origin/$PILOT_BASELINE_BRANCH:.specify/onboarding/managed-files.json" > "$ROOT/trusted/managed-files.json"
+              git show "origin/$PILOT_BASELINE_BRANCH:.specify/onboarding/check-case.py" > "$ROOT/trusted/check-case.py"
+              (cd "$ROOT/trusted" && sha256sum check.py managed-files.json check-case.py > SHA256SUMS)
+            fi
+          fi
+          TRUSTED_CHECKER="$ROOT/trusted/check.py"
+          TRUSTED_MANIFEST="$ROOT/trusted/managed-files.json"
+          TRUSTED_CASE_CHECKER="$ROOT/trusted/check-case.py"
+          git checkout --detach "$PR_HEAD_SHA" || CHECK_RC=$?
+          if [ "$MODE" = case ]; then
+            printf '%s\n' "$CASE_KEY" | grep -Eq '^pers-[0-9]+-[a-z0-9-]+$' || CHECK_RC=1
+            test -s "$CASE_MANIFEST" || CHECK_RC=1
+          python3 - "$CASE_MANIFEST" "$CASE_KEY" "$PR_BASE_SHA" "$APPROVED_CHECK_IDS_FILE" <<'PY' || CHECK_RC=1
+          import json, re, sys
+          path, key, base, out = sys.argv[1:]
+          m = json.load(open(path, encoding='utf-8'))
+          expected = {'feature':['FEAT-1','FEAT-2','FEAT-3'], 'bug':['BUG-1','BUG-2','BUG-3','BUG-4'], 'idea':['IDEA-1','IDEA-2','IDEA-3','IDEA-4','IDEA-5']}
+          assert m['case_key'] == key and m['reviewed_baseline_sha'] == base
+          assert re.fullmatch(r'pers-[0-9]+-[a-z0-9-]+', key)
+          ids = expected[m['case_type']]
+          assert m['acceptance_ids'] == ids and m['approved_check_ids'] == ids, 'acceptance/check ID set mismatch'
+          trace = f'.specify/traceability/cases/{key}.yml'
+          if m['case_type'] == 'feature': allowed = {'Makefile', f'specs/{key}/', f'.specify/features/{key}/', trace}
+          elif m['case_type'] == 'bug': allowed = {'README.md', f'.specify/bugs/{key}/', trace}
+          else: allowed = {f'.specify/assessments/{key}/{n}.md' for n in ('intake','research','problem','concept','decision')} | {trace}
+          assert set(m.get('allowed_paths', [])) == allowed, 'manifest allowed_paths mismatch'
+          if m['case_type'] == 'feature': assert m['feature_directory'] == f'specs/{key}'
+          open(out, 'w', encoding='utf-8').write('\n'.join(ids)+'\n')
+          PY
+          fi
+          ACTUAL_TESTED_SHA=$(git rev-parse HEAD 2> "$ROOT/evidence/rev-parse.err") || CHECK_RC=$?
+          CHECK_RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          test "$ACTUAL_TESTED_SHA" = "$PR_HEAD_SHA" || CHECK_RC=1
+          test "$PR_BASE_SHA" = "$APPROVED_BASE_SHA" || CHECK_RC=1
+          git merge-base --is-ancestor "$PR_BASE_SHA" "$PR_HEAD_SHA" || CHECK_RC=1
+          mkdir -p "$ROOT/evidence/reports"
+          if [ "$MODE" = case ] && [ "$CHECK_RC" -eq 0 ]; then
+          python3 - "$PWD" "$PR_HEAD_SHA" "$CASE_MANIFEST" "$CASE_KEY" "$ROOT/evidence/reports" <<'PY' || CHECK_RC=1
+          import json, re, subprocess, sys
+          repo, commit, manifest_path, key, dest = sys.argv[1:]
+          m = json.load(open(manifest_path, encoding='utf-8'))
+          assert m['case_key'] == key and re.fullmatch(r'pers-[0-9]+-[a-z0-9-]+', key)
+          groups = {
+            'feature': [f'specs/{key}/{n}.md' for n in ('spec','plan','tasks')],
+            'bug': [f'.specify/bugs/{key}/{n}.md' for n in ('assessment','fix','test')],
+            'idea': [f'.specify/assessments/{key}/{n}.md' for n in ('intake','research','problem','concept','decision')],
+          }
+          if m['case_type'] == 'feature': assert m['feature_directory'] == f'specs/{key}'
+          paths = groups[m['case_type']]
+          required = {'feature':['FEAT-1','FEAT-2','FEAT-3'], 'bug':['BUG-1','BUG-2','BUG-3','BUG-4'], 'idea':['IDEA-1','IDEA-2','IDEA-3','IDEA-4','IDEA-5']}[m['case_type']]
+          assert m['acceptance_ids'] == required and m['approved_check_ids'] == required
+          for p in paths:
+            entry = subprocess.check_output(['git','-C',repo,'ls-tree',commit,'--',p], text=True).rstrip('\n')
+            meta, found = entry.split('\t',1)
+            mode, typ, _oid = meta.split()
+            assert found == p and typ == 'blob' and mode in ('100644','100755'), f'not a regular tracked blob at head: {p}'
+            data = subprocess.check_output(['git','-C',repo,'show',f'{commit}:{p}'])
+            target = __import__('pathlib').Path(dest,p)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+          PY
+          fi
+          set +e
+          if [ "$MODE" = baseline ]; then
+            REVIEWED_BASE_SHA=$(git rev-list --reverse "$PR_BASE_SHA..$PR_HEAD_SHA" | sed -n '1p')
+            test -n "$REVIEWED_BASE_SHA" || CHECK_RC=1
+            git worktree add --detach "$ROOT/reviewed-base" "$REVIEWED_BASE_SHA" > "$ROOT/evidence/worktree.log" 2>&1 || CHECK_RC=$?
+            python3 "$TRUSTED_CHECKER" preflight --repo "$ROOT/reviewed-base" --base "$REVIEWED_BASE_SHA" --commit "$REVIEWED_BASE_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/preflight.log" 2>&1 || CHECK_RC=$?
+          python3 - "$PWD" "$PR_BASE_SHA" "$PR_HEAD_SHA" "$TRUSTED_MANIFEST" <<'PY' > "$ROOT/evidence/baseline-scopes.json" || CHECK_RC=1
+          import json, subprocess, sys
+          repo, base, head, manifest_path = sys.argv[1:]
+          manifest = json.load(open(manifest_path, encoding='utf-8'))
+          commits = subprocess.check_output(['git','-C',repo,'rev-list','--reverse',f'{base}..{head}'], text=True).splitlines()
+          assert len(commits) == 3, f'baseline must contain exactly three commits, got {len(commits)}'
+          def changed(commit):
+            return set(subprocess.check_output(['git','-C',repo,'diff-tree','--no-commit-id','--name-only','-r',commit], text=True).splitlines())
+          reviewed_base = {'docs/project-profile.md', '.specify/memory/constitution.md'}
+          scaffold = set(manifest['owned_files']) | {
+            '.specify/onboarding-policy.json',
+            '.specify/retention.yml', 'docs/adr/0001-spec-kit-pilot.md',
+            '.specify/bootstrap-receipt.json', '.specify/onboarding/check.py',
+            '.specify/onboarding/managed-files.json'
+          }
+          trace = {'.github/workflows/spec-kit-trace.yml', '.specify/onboarding/check-case.py'}
+          expected = [reviewed_base, scaffold, trace]
+          outcomes=[]
+          for number, (commit, scope) in enumerate(zip(commits, expected), 1):
+            actual=changed(commit)
+            assert actual == scope, f'baseline commit {number} scope mismatch: missing={sorted(scope-actual)} extra={sorted(actual-scope)}'
+            outcomes.append({'commit':commit,'scope':sorted(actual),'outcome':'PASS'})
+          for required in ('.specify/memory/constitution.md','.specify/onboarding-policy.json','.specify/retention.yml','.specify/bootstrap-receipt.json'):
+            mode=subprocess.check_output(['git','-C',repo,'ls-tree','-r',head,'--',required], text=True).split('\t',1)[0].split()[0]
+            assert mode in ('100644','100755'), f'required tracked regular file missing: {required}'
+            data=subprocess.check_output(['git','-C',repo,'show',f'{head}:{required}'])
+            assert data.strip(), f'required file empty: {required}'
+          print(json.dumps({'commits':outcomes,'required_files':'PASS'}))
+          PY
+            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
+          elif [ "$MODE" = case ] && [ "$CHECK_RC" -eq 0 ]; then
+            python3 "$TRUSTED_CHECKER" verify --repo "$PWD" --commit "$PR_HEAD_SHA" --expected "$TRUSTED_MANIFEST" --runbook 1.0.0 > "$ROOT/evidence/verify.log" 2>&1 || CHECK_RC=$?
+            if [ "$CHECK_RC" -eq 0 ]; then
+              : > "$ROOT/evidence/checks.jsonl"
+              while IFS= read -r id; do
+                [ -n "$id" ] || continue
+                if python3 "$TRUSTED_CASE_CHECKER" --id "$id" --repo "$PWD" --base "$PR_BASE_SHA" --head "$PR_HEAD_SHA" --manifest "$CASE_MANIFEST" > "$ROOT/evidence/$id.log" 2>&1; then outcome=PASS; rc=0; else rc=$?; outcome=FAIL; CHECK_RC=1; fi
+                printf '{"acceptance_id":"%s","check_id":"%s","outcome":"%s","exit_code":%s}\n' "$id" "$id" "$outcome" "$rc" >> "$ROOT/evidence/checks.jsonl"
+              done < "$APPROVED_CHECK_IDS_FILE"
+            fi
+          fi
+          set -e
+          printf '{"mode":"%s","head":"%s","base":"%s","tested":"%s","check_run_url":"%s","exit_code":%s}\n' "$MODE" "$PR_HEAD_SHA" "$PR_BASE_SHA" "$ACTUAL_TESTED_SHA" "$CHECK_RUN_URL" "$CHECK_RC" > "$ROOT/evidence/check-result.json"
+          find "$ROOT/evidence" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > "$ROOT/evidence/SHA256SUMS"
+          echo "EVIDENCE_DIR=$ROOT/evidence" >> "$GITHUB_ENV"
+          echo "CHECK_RC=$CHECK_RC" >> "$GITHUB_ENV"
+
+      - name: Upload trace evidence
+        id: evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-kit-${{ env.CASE_KEY }}-${{ github.event.pull_request.head.sha }}
+          path: ${{ env.EVIDENCE_DIR }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Record upload digest and fail closed
+        if: always()
+        shell: bash
+        env:
+          CHECK_RC: ${{ env.CHECK_RC }}
+          UPLOAD_OUTCOME: ${{ steps.evidence.outcome }}
+          ARTIFACT_ID: ${{ steps.evidence.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.evidence.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          test "$UPLOAD_OUTCOME" = success
+          test -n "$ARTIFACT_ID" && test -n "$ARTIFACT_DIGEST" && test -n "$ARTIFACT_URL"
+          printf 'artifact_id=%s\nartifact_digest=%s\nartifact_url=%s\n' "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+          test "$CHECK_RC" = 0
