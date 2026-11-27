@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-331-container-readiness",
+  "issue_id": "PERS-331",
+  "case_type": "idea",
+  "reviewed_baseline_sha": "7d859e08499cede49002f17830a9e89f113af760",
+  "owner": "Reliability & Performance Engineer",
+  "independent_reviewer": "Solution Architect",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "approved_check_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "allowed_paths": [
+    ".specify/assessments/pers-331-container-readiness/intake.md",
+    ".specify/assessments/pers-331-container-readiness/research.md",
+    ".specify/assessments/pers-331-container-readiness/problem.md",
+    ".specify/assessments/pers-331-container-readiness/concept.md",
+    ".specify/assessments/pers-331-container-readiness/decision.md",
+    ".specify/traceability/cases/pers-331-container-readiness.yml"
+  ],
+  "evidence_paths": [
+    ".specify/assessments/pers-331-container-readiness/"
+  ],
+  "required_reports": [
+    "intake",
+    "research",
+    "problem",
+    "concept",
+    "decision"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8"
+}
