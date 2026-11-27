@@ -37,4 +37,7 @@ cleanup:
 test:
 	container-structure-test test --image $(IMAGE):$(IMAGE_TAG) --config structure-tests.yaml
 
+test-release-input:
+	bash tests/test-release-input.sh
+
 .DEFAULT_GOAL := help
