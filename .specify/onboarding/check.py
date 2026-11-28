@@ -157,7 +157,7 @@ ap.add_argument('mode', choices=('capture', 'preflight', 'receipt', 'verify'))
 ap.add_argument('--repo', required=True); ap.add_argument('--commit', required=True)
 ap.add_argument('--base'); ap.add_argument('--expected'); ap.add_argument('--output')
 ap.add_argument('--previous'); ap.add_argument('--previous-pin')
-ap.add_argument('--runbook', default='1.0.0')
+ap.add_argument('--runbook', required=True)
 a = ap.parse_args()
 try:
     if a.mode == 'capture':
