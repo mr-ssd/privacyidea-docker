@@ -18,7 +18,7 @@ env:
   PILOT_BASELINE_SHA: ${{ vars.PILOT_BASELINE_SHA }}
   RUNBOOK_ARCHIVE: ${{ vars.RUNBOOK_ARCHIVE }}
   RUNBOOK_SHA256: ${{ vars.RUNBOOK_SHA256 }}
-  RUNBOOK_VERSION: '1.0.5'
+  RUNBOOK_VERSION: '1.0.6'
 
 jobs:
   trace:
@@ -87,11 +87,61 @@ jobs:
               git show "origin/$PILOT_BASELINE_BRANCH:.specify/onboarding/check-case.py" > "$ROOT/trusted/check-case.py"
               (cd "$ROOT/trusted" && sha256sum check.py managed-files.json check-case.py > SHA256SUMS)
             fi
+            # Drift guard (PERS-385): case mode needs the SHA-verified archive as its lone
+            # independent reference. The checkers staged from the pinned baseline cannot
+            # vouch for themselves (PERS-383 class: reference and target drift together).
+            if [ -z "$RUNBOOK_ARCHIVE" ] || [ -z "$RUNBOOK_SHA256" ]; then
+              echo 'FAIL: RUNBOOK_ARCHIVE/RUNBOOK_SHA256 not staged for the drift guard' >&2
+              CHECK_RC=1
+            elif [ "$CHECK_RC" -eq 0 ]; then
+              mkdir -p "$ROOT/archive"
+              curl -fsSL "$RUNBOOK_ARCHIVE" | base64 -d > "$ROOT/runbook.tar.gz" || CHECK_RC=$?
+              if [ "$CHECK_RC" -eq 0 ]; then
+                printf '%s  %s\n' "$RUNBOOK_SHA256" "$ROOT/runbook.tar.gz" | sha256sum --check - || CHECK_RC=1
+                tar -xzf "$ROOT/runbook.tar.gz" -C "$ROOT/archive" || CHECK_RC=1
+                (cd "$ROOT/archive" && sha256sum --check SHA256SUMS) || CHECK_RC=1
+              fi
+            fi
           fi
           TRUSTED_CHECKER="$ROOT/trusted/check.py"
           TRUSTED_MANIFEST="$ROOT/trusted/managed-files.json"
           TRUSTED_CASE_CHECKER="$ROOT/trusted/check-case.py"
           git checkout --detach "$PR_HEAD_SHA" || CHECK_RC=$?
+          # Trusted-checker byte-equality guard (PERS-385). The archive is the only
+          # independent reference for these four members, so comparison is archive member
+          # vs the PR-head copy in both modes: that catches direct modification at the head
+          # and drift inherited from a drifted pinned baseline. A missing deployed copy is a
+          # failure, never a skip; a drifted checker must never run.
+          : > "$ROOT/evidence/trusted-drift.jsonl"
+          if [ "$CHECK_RC" -eq 0 ] && { [ "$MODE" = baseline ] || [ "$MODE" = case ]; }; then
+            if [ "$MODE" = baseline ]; then ARCHIVE_DIR="$ROOT/trusted"; else ARCHIVE_DIR="$ROOT/archive"; fi
+            for pair in \
+              "check.py:.specify/onboarding/check.py" \
+              "check-case.py:.specify/onboarding/check-case.py" \
+              "managed-files.json:.specify/onboarding/managed-files.json" \
+              "trace-workflow.yml:.github/workflows/spec-kit-trace.yml"; do
+              member=${pair%%:*}
+              path=${pair#*:}
+              archive_sha=$(sha256sum "$ARCHIVE_DIR/$member" 2>/dev/null | awk '{print $1}')
+              if [ ! -f "$path" ]; then
+                echo "FAIL: trusted-checker deployed copy missing: $member path=$path" >&2
+                printf '{"member":"%s","path":"%s","archive_sha256":"%s","deployed_sha256":"","outcome":"FAIL"}\n' \
+                  "$member" "$path" "$archive_sha" >> "$ROOT/evidence/trusted-drift.jsonl"
+                CHECK_RC=1
+                continue
+              fi
+              deployed_sha=$(sha256sum "$path" | awk '{print $1}')
+              if [ "$archive_sha" = "$deployed_sha" ]; then
+                outcome=PASS
+              else
+                echo "FAIL: trusted-checker drift (archive != deployed): $member archive=$archive_sha deployed=$deployed_sha path=$path" >&2
+                outcome=FAIL
+                CHECK_RC=1
+              fi
+              printf '{"member":"%s","path":"%s","archive_sha256":"%s","deployed_sha256":"%s","outcome":"%s"}\n' \
+                "$member" "$path" "$archive_sha" "$deployed_sha" "$outcome" >> "$ROOT/evidence/trusted-drift.jsonl"
+            done
+          fi
           # The checker's --runbook value must equal the runbook_version recorded in the
           # branch's own bootstrap receipt (pinned heads carry 1.0.0; repos onboarded with
           # a newer runbook carry that version). RUNBOOK_VERSION below only labels the
