@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-385-control-c3",
+  "issue_id": "PERS-385",
+  "case_type": "idea",
+  "reviewed_baseline_sha": "6bc3114c53a379a4d3ded6cfe1e5bd24a1a077af",
+  "owner": "Backend Engineer",
+  "independent_reviewer": "Lead Engineer",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": ["IDEA-1", "IDEA-2", "IDEA-3", "IDEA-4", "IDEA-5"],
+  "approved_check_ids": ["IDEA-1", "IDEA-2", "IDEA-3", "IDEA-4", "IDEA-5"],
+  "allowed_paths": [
+    ".specify/assessments/pers-385-control-c3/intake.md",
+    ".specify/assessments/pers-385-control-c3/research.md",
+    ".specify/assessments/pers-385-control-c3/problem.md",
+    ".specify/assessments/pers-385-control-c3/concept.md",
+    ".specify/assessments/pers-385-control-c3/decision.md",
+    ".specify/traceability/cases/pers-385-control-c3.yml"
+  ],
+  "evidence_paths": [".specify/assessments/pers-385-control-c3/"],
+  "required_reports": ["intake", "research", "problem", "concept", "decision"],
+  "runbook_version": "1.0.6",
+  "upstream_commit": "6ba8beefff8d6408cadd62038e92d459093e33a8"
+}
