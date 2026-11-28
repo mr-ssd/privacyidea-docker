@@ -2,7 +2,7 @@
 
 ## Purpose and verified source
 
-`privacyidea-docker` builds a container image that installs privacyIDEA from PyPI on the official Python image (`README.md:5`, `Dockerfile:10,48`). This profile describes tracked `main` at `f3c01c28cefd6f3df6ea2fe95c4653088ee4024e` (2026-11-26). All file references below refer to that commit. Workflow definitions and scripts were inspected; workflow runs, published registry state, and deployment-specific behavior were not independently exercised.
+`privacyidea-docker` builds a container image that installs privacyIDEA from PyPI on the official Python image (`README.md:5`, `Dockerfile:10,48`). This profile describes tracked `main` at `e89f83994f57f45ebbd8b93dc4270cfda2df6120` (2026-11-28), with `pilot/spec-kit-baseline` at `18949394ea0cafcc2518c4def94c38045e86a868` also inspected for the Spec Kit and trusted-checker surface. All file references below refer to `main` at `e89f83994f57f45ebbd8b93dc4270cfda2df6120` unless noted otherwise. Workflow definitions and scripts were inspected; workflow runs, remote repository variable configuration, published registry state, and deployment-specific behavior were not independently exercised.
 
 ## Languages and versions
 
@@ -40,6 +40,7 @@ The tracked CI gates and their evidence are:
 | `container-structure-test test --image privacyidea:test --config structure-tests.yaml` | Image metadata, user, files, permissions, syntax, and selected runtime configuration assertions | `.github/workflows/ci.yml:127-148`; `structure-tests.yaml:3-96` |
 | `docker compose --file docker-compose-test.yml up --no-build --exit-code-from sut --timeout 120` | Compose integration startup/readiness and provisioned API scenarios; test services use SQLite | `.github/workflows/ci.yml:150-155`; `docker-compose-test.yml:8-18`; `run-tests.sh:9-41`; `tests/integration-provisioned-api.sh:13-115` |
 | Installed-version assertion | Compares the image’s installed privacyIDEA package version with the requested version | `.github/workflows/ci.yml:156-167` |
+| `spec-kit trace gate` | Validates Spec Kit baseline scopes or pilot case manifests/allowlists using trusted `.specify/onboarding/{check.py,check-case.py,managed-files.json}` and uploads checksummed evidence | `.github/workflows/spec-kit-trace.yml:1-284`; `.specify/onboarding/check.py:1-186`; `.specify/onboarding/check-case.py:1-99` |
 
 There is no unit-test framework declared by these tracked gates. `IMAGE=privacyidea:test bash tests/test-db-uri-encoding.sh` is a manual regression check, not invoked by tracked workflows; it checks SQLAlchemy password round-trip after the script’s URI encoding and assembly (`tests/test-db-uri-encoding.sh:10-42`; `.github/workflows/ci.yml:1-171`). The Compose suite uses SQLite, so it does not exercise a live PostgreSQL service (`docker-compose-test.yml:8-18`). Open questions: the manual DB URI check does not establish a live external-database integration gate, and TLS binding plus mounts/permissions still need deployment-specific verification; existing CI does not cover those paths (`.github/workflows/ci.yml:86-171`; `docker-compose-test.yml:8-18`).
 
@@ -67,6 +68,13 @@ The version-check workflow runs on a daily schedule or manual dispatch, discover
 
 README summarizes registries and tag channels (`README.md:17-40`): stable releases are described for Docker Hub, while GHCR carries all channels, including `edge`. It describes version tags as immutable, while `edge` and `sha-<12>` are moving aliases; use the runbook for the precise writer and rebuild rules (`README.md:24-40`; `docs/release-runbook.md:5-16`). Registry contents and workflow execution were not independently verified for this profile.
 
+The Spec Kit trace gate (`.github/workflows/spec-kit-trace.yml:1-284`) runs on pull requests targeting `main` (`baseline` mode) or `pilot/spec-kit-baseline` (`case` mode). In `baseline` mode, it fetches and checksum-verifies the staged runbook archive and validates the three-commit baseline scope and `.specify/onboarding/check.py` preflight/verify; in `case` mode, it verifies `pilot/spec-kit-baseline` against the approved SHA, extracts `.specify/onboarding/{check.py,check-case.py,managed-files.json}` (pinned to upstream `6ba8beefff8d6408cadd62038e92d459093e33a8`, 70 owned files) from that branch, and runs case assertions before uploading a `SHA256SUMS`-verified evidence artifact (`.github/workflows/spec-kit-trace.yml:47-101,160-203,218-270`). Repository variables read by the trace workflow (names and purposes only):
+- `CONFIGURED_BASE_SHA` — approved `main` baseline SHA.
+- `PILOT_BASELINE_SHA` — approved `pilot/spec-kit-baseline` head SHA.
+- `RUNBOOK_ARCHIVE` — staged encoded runbook archive used in `baseline` mode.
+- `RUNBOOK_SHA256` — expected SHA-256 digest for that archive.
+- The workflow also uses the standard `GITHUB_TOKEN` secret.
+
 ## Environments
 
 - Local build/run uses Docker and Docker Compose; the Makefile and compose files are the command definitions (`Makefile:12-38`; `docker-compose.yml:1-57`; `docker-compose-test.yml:1-34`).
@@ -78,15 +86,19 @@ README summarizes registries and tag channels (`README.md:17-40`): stable releas
 - Keep the runtime non-root and use the `tini` entrypoint/`exec` startup contract (`Dockerfile:61-70`; `rootfs/usr/local/bin/privacyidea_entrypoint.sh:33-50`).
 - The Docker base image is digest-pinned (`Dockerfile:10,48`); GitHub Actions are pinned by full commit SHA with version comments (example: `.github/workflows/ci.yml:22-28`). Dependabot is configured for dependency updates (`.github/dependabot.yml:1-41`).
 - Release writes and tag meanings follow the approval boundaries in `docs/release-runbook.md:5-22`; CI success alone does not authorize publication (`docs/release-runbook.md:22`).
+- Branch model: `main` is the primary release/integration branch; `pilot/spec-kit-baseline` is the isolated Spec Kit pilot baseline branch (`docs/adr/0001-spec-kit-pilot.md:18-27`; `.github/workflows/spec-kit-trace.yml:15-18`).
+- Commit and PR conventions: commits follow Conventional Commits (`<type>(<scope>): <summary>` or `<type>: <summary>`) with Multica issue keys (e.g., `(PERS-383)`) or PR numbers (`(#233)`) when applicable. PRs targeting `main` use descriptive Conventional Commit or issue-keyed titles; Spec Kit pilot case PRs target `pilot/spec-kit-baseline` from `pers-<num>-<slug>` or `case/pers-<num>-<slug>` branches with `Spec Kit [pilot ]case: <type> <case-key> ... (<ISSUE>)` titles.
+- Ownership and merge policy: no `CODEOWNERS` file exists; `.specify/onboarding-policy.json:4,20-21` records `"owner": "mr-ssd"`, `"independent_review": "required"`, and `"human_merge_approval": "required"`. Merged PRs in repository history are authored/merged by `mr-ssd`.
 
 ## Repository layout
 
 - Root: Dockerfile, requirements, Makefile, README, and demo/test Compose files (`Dockerfile:1-70`; `requirements.txt:1-11`; `Makefile:1-40`; `docker-compose.yml:1-57`; `docker-compose-test.yml:1-34`).
 - `rootfs/`: entrypoint/configuration scripts, templates, and Gunicorn/logging configuration (`rootfs/usr/local/bin/privacyidea_entrypoint.sh:1-55`; `rootfs/usr/local/bin/configure_privacyidea.sh:1-309`; `rootfs/opt/templates/pi-config.template:1-42`; `rootfs/opt/privacyidea/gunicorn_conf.py:1-67`).
-- `.github/workflows/`: CI, release, and upstream version-check workflows (`.github/workflows/ci.yml:1-171`; `.github/workflows/release.yml:1-749`; `.github/workflows/check-pi-version.yml:1-230`).
+- `.github/workflows/`: CI, release, upstream version-check, and Spec Kit trace workflows (`.github/workflows/ci.yml:1-171`; `.github/workflows/release.yml:1-749`; `.github/workflows/check-pi-version.yml:1-230`; `.github/workflows/spec-kit-trace.yml:1-284`).
 - `.github/scripts/`: release input resolution and promotion helpers (`.github/scripts/resolve-release-input.sh:1-252`; `.github/scripts/promote-release.sh`; `.github/scripts/release-refs.sh`).
+- `.specify/`: Spec Kit onboarding policy, retention, bootstrap receipt, constitution, templates/extensions, and the trusted-checker surface (`.specify/onboarding/check.py:1-186`; `.specify/onboarding/check-case.py:1-99`; `.specify/onboarding/managed-files.json`). Agent integration command/skill directories live under `.agents/`, `.omp/`, and `.opencode/`.
 - `tests/`: release input/promotion scripts, DB URI regression script, and provisioned API integration script (`tests/test-release-input.sh:1-333`; `tests/test-release-promotion.sh`; `tests/test-db-uri-encoding.sh:1-43`; `tests/integration-provisioned-api.sh:1-115`).
-- `docs/`: release runbook (`docs/release-runbook.md:1-60`).
+- `docs/`: release runbook, Spec Kit pilot ADR, and this project profile (`docs/release-runbook.md:1-60`; `docs/adr/0001-spec-kit-pilot.md:1-44`; `docs/project-profile.md`).
 
 ## Known drift and verification limits
 
@@ -96,12 +108,14 @@ README summarizes registries and tag channels (`README.md:17-40`): stable releas
 - README’s TLS description does not fully express that both files are required or that `GUNICORN_BIND` overrides `PI_SSLPORT` (`README.md:110`; `rootfs/usr/local/bin/privacyidea_entrypoint.sh:39-50`).
 - `tests/test-db-uri-encoding.sh` is not a CI workflow invocation at this commit; Compose uses SQLite (`.github/workflows/ci.yml:1-171`; `docker-compose-test.yml:8-18`).
 - README and runbook together describe tag behavior; consult both because mutable aliases and rebuild routes have distinct rules (`README.md:24-40`; `docs/release-runbook.md:5-16`).
-- No claim is made here about successful execution of CI or release workflows, remote registry contents, real deployment mounts/proxies, or whether user-provided environment values work in every deployment. Those require environment-specific verification.
+- `spec-kit-trace.yml:95-101` intentionally sources trusted checker code separately from the PR head and passes `.specify/bootstrap-receipt.json`'s `runbook_version` to `--runbook`; do not conflate the workflow's `RUNBOOK_VERSION` env label with the branch receipt's `runbook_version`.
+- `main` (`e89f83994f57f45ebbd8b93dc4270cfda2df6120`) and `pilot/spec-kit-baseline` (`18949394ea0cafcc2518c4def94c38045e86a868`) have identical `.github/workflows/spec-kit-trace.yml` and `.specify/onboarding/{check.py,check-case.py,managed-files.json}` files; `pilot/spec-kit-baseline` additionally carries merged pilot case changes under `.specify/`, `specs/`, `Makefile`, and `README.md`.
+- No claim is made here about successful execution of CI, trace, or release workflows, remote repository variable configuration, remote registry contents, real deployment mounts/proxies, or whether user-provided environment values work in every deployment. Those require environment-specific verification.
 
 ## Key directories
 
-`rootfs/` contains runtime behavior; `.github/workflows/` and `.github/scripts/` contain automation; `tests/` contains checks; `docs/` contains operational documentation. See the cited inventory under [Repository layout](#repository-layout).
+`rootfs/` contains runtime behavior; `.github/workflows/` and `.github/scripts/` contain automation; `.specify/` contains Spec Kit onboarding, policy, and trusted-checker files; `tests/` contains checks; `docs/` contains operational documentation. See the cited inventory under [Repository layout](#repository-layout).
 
 ## Last verified date
 
-Verification date: **2026-11-26**, against `main` SHA `f3c01c28cefd6f3df6ea2fe95c4653088ee4024e`.
+Verification date: **2026-11-28**, against `main` SHA `e89f83994f57f45ebbd8b93dc4270cfda2df6120` and `pilot/spec-kit-baseline` SHA `18949394ea0cafcc2518c4def94c38045e86a868`.
