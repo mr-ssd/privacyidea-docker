@@ -184,3 +184,4 @@ try:
             verify(a.repo, a.commit, m, a.runbook); print('PASS verify ' + a.commit)
 except Exception as e:
     print('FAIL: ' + str(e), file=sys.stderr); sys.exit(1)
+
