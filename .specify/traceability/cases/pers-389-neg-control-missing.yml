@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "case_key": "pers-389-neg-control-missing",
+  "issue_id": "PERS-389",
+  "case_type": "idea",
+  "reviewed_baseline_sha": "6bc3114c53a379a4d3ded6cfe1e5bd24a1a077af",
+  "owner": "QA Engineer",
+  "independent_reviewer": "QA Engineer",
+  "constitution_revision": 1,
+  "adr_revision": 1,
+  "acceptance_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "approved_check_ids": [
+    "IDEA-1",
+    "IDEA-2",
+    "IDEA-3",
+    "IDEA-4",
+    "IDEA-5"
+  ],
+  "allowed_paths": [
+    ".specify/assessments/pers-389-neg-control-missing/intake.md",
+    ".specify/assessments/pers-389-neg-control-missing/research.md",
+    ".specify/assessments/pers-389-neg-control-missing/problem.md",
+    ".specify/assessments/pers-389-neg-control-missing/concept.md",
+    ".specify/assessments/pers-389-neg-control-missing/decision.md",
+    ".specify/traceability/cases/pers-389-neg-control-missing.yml"
+  ],
+  "evidence_paths": [
+    ".specify/assessments/pers-389-neg-control-missing/"
+  ],
+  "required_reports": [
+    "intake",
+    "research",
+    "problem",
+    "concept",
+    "decision"
+  ],
+  "runbook_version": "1.0.0",
+  "upstream_commit": "6bc3114c53a379a4d3ded6cfe1e5bd24a1a077af"
+}
