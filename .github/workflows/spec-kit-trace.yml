@@ -13,12 +13,12 @@ permissions:
 
 env:
   CONFIGURED_BASE_BRANCH: main
-  CONFIGURED_BASE_SHA: f3c01c28cefd6f3df6ea2fe95c4653088ee4024e
+  CONFIGURED_BASE_SHA: ${{ vars.CONFIGURED_BASE_SHA }}
   PILOT_BASELINE_BRANCH: pilot/spec-kit-baseline
   PILOT_BASELINE_SHA: ${{ vars.PILOT_BASELINE_SHA }}
   RUNBOOK_ARCHIVE: ${{ vars.RUNBOOK_ARCHIVE }}
   RUNBOOK_SHA256: ${{ vars.RUNBOOK_SHA256 }}
-  RUNBOOK_VERSION: '1.0.4'
+  RUNBOOK_VERSION: '1.0.5'
 
 jobs:
   trace:
@@ -56,6 +56,10 @@ jobs:
           # Trusted inputs come from the SHA-verified staged runbook archive (baseline
           # mode) or the protected approved baseline revision (case mode), never the PR head.
           if [ "$MODE" = baseline ]; then
+            if [ -z "$APPROVED_BASE_SHA" ]; then
+              echo 'FAIL: CONFIGURED_BASE_SHA repository variable not configured' >&2
+              CHECK_RC=1
+            fi
             if [ -z "$RUNBOOK_ARCHIVE" ] || [ -z "$RUNBOOK_SHA256" ]; then
               echo 'FAIL: RUNBOOK_ARCHIVE/RUNBOOK_SHA256 not staged for baseline mode' >&2
               CHECK_RC=1
