@@ -1,0 +1,124 @@
+name: spec-kit-plan-lint
+
+# Additive convergence-protocol gate (PERS-397 phase 2). It produces the
+# mechanical part of the gate checklist — G1 (size & structure), G2 (pin
+# integrity) and G3 (pin currency) — for plan artifacts changed by a PR.
+# G4–G8 stay human evidence in the gate issue.
+#
+# This workflow does not modify or replace spec-kit-trace.yml.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - pilot/spec-kit-baseline
+    paths:
+      - '**/plan.md'
+      - '**/plan-pins.json'
+      - 'plan.md'
+      - 'plan-pins.json'
+      - '.github/scripts/pins.py'
+      - '.github/scripts/plan_lint.py'
+      - 'tests/test-plan-tooling.py'
+      - 'tests/fixtures/plan-tooling/**'
+      - '.github/workflows/spec-kit-plan-lint.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plan-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan-lint:
+    name: plan lint (G1–G3)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Tool controls (positive and negative)
+        run: |
+          set -uo pipefail
+          python3 --version
+          python3 tests/test-plan-tooling.py
+
+      - name: Lint changed plan artifacts (G1–G3)
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set +e
+          set -uo pipefail
+          summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
+
+          # A plan artifact is a directory holding plan.md next to
+          # plan-pins.json. Fixtures under tests/fixtures are intentional
+          # negatives and are exercised by the controls step instead.
+          mapfile -t changed < <(git diff --name-only --diff-filter=d "$PR_BASE_SHA...$PR_HEAD_SHA")
+          dirs=()
+          for path in "${changed[@]}"; do
+            case "$path" in
+              tests/fixtures/*) continue ;;
+            esac
+            case "$path" in
+              */plan.md|*/plan-pins.json|plan.md|plan-pins.json)
+                dir=$(dirname "$path")
+                for existing in "${dirs[@]}"; do
+                  if [ "$existing" = "$dir" ]; then continue 2; fi
+                done
+                dirs+=("$dir")
+                ;;
+            esac
+          done
+
+          printf '### spec-kit plan lint (G1–G3)\n\n' >> "$summary"
+          if [ "${#dirs[@]}" -eq 0 ]; then
+            echo "no plan artifacts changed in this PR — tooling controls only"
+            printf 'No plan artifacts changed in this PR.\n' >> "$summary"
+            exit 0
+          fi
+          printf '| Plan artifact | Bytes | plan_lint.py | pins.py check |\n' >> "$summary"
+          printf '|---|---|---|---|\n' >> "$summary"
+
+          failed=0
+          for dir in "${dirs[@]}"; do
+            plan="$dir/plan.md"
+            ledger="$dir/plan-pins.json"
+            if [ ! -f "$plan" ]; then
+              echo "FAIL plan-missing: ${dir} has plan-pins.json but no plan.md"
+              printf '| %s | - | missing | - |\n' "$dir" >> "$summary"
+              failed=1
+              continue
+            fi
+            if [ ! -f "$ledger" ]; then
+              echo "FAIL plan-ledger-missing: ${dir} has plan.md but no plan-pins.json"
+              printf '| %s | - | - | missing |\n' "$dir" >> "$summary"
+              failed=1
+              continue
+            fi
+            bytes=$(wc -c < "$plan")
+            echo "::group::${dir} (${bytes} bytes)"
+            python3 .github/scripts/plan_lint.py --plan "$plan"
+            lint_rc=$?
+            python3 .github/scripts/pins.py check --plan "$plan" --ledger "$ledger"
+            check_rc=$?
+            echo "::endgroup::"
+            printf '| %s | %s | exit %s | exit %s |\n' "$dir" "$bytes" "$lint_rc" "$check_rc" >> "$summary"
+            if [ "$lint_rc" -ne 0 ] || [ "$check_rc" -ne 0 ]; then
+              failed=1
+            fi
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            printf '\nG1–G3 FAIL: see the named causes in the job log.\n' >> "$summary"
+            echo "plan lint failed: fix the named causes above" >&2
+            exit 1
+          fi
+          printf '\nG1–G3 PASS. G4–G8 are human evidence in the gate issue.\n' >> "$summary"
+          echo "plan artifacts clean: ${#dirs[@]} checked"

@@ -1,0 +1,23 @@
+{
+  "schema": "plan-pins/1",
+  "rollout": "R-DEMO",
+  "ledger_revision": 6,
+  "budget": {
+    "declared_max_sub_issues": 20,
+    "consumed": 3
+  },
+  "pins": {
+    "runbook_version": {
+      "kind": "semver",
+      "value": "1.0.6"
+    },
+    "archive_sha256": {
+      "kind": "sha256",
+      "value": "4f9c1d2b4f9c1d2b4f9c1d2b4f9c1d2b4f9c1d2b4f9c1d2b4f9c1d2b4f9c1d2b"
+    },
+    "gist_url": {
+      "kind": "url",
+      "value": "https://gist.github.com/example/runbook-evidence"
+    }
+  }
+}
